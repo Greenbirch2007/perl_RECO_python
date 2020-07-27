@@ -1,0 +1,184 @@
+[Perl][threads]多线程循环处理任务
+
+https://zhuanlan.zhihu.com/p/29232230
+
+模块
+
+模块选择，最开始我用的是 Thread 模块，用了一阵子感觉束手束脚，少了什么。（在这之前我也没接触过线程）。然后重新去看 perldoc
+
+You are strongly encouraged to migrate any existing threaded code to the new model (i.e., use the "threads" and "threads::shared" modules) as soon as possible.
+所以 threads 和 threads::shared 才是更好的选择。
+
+
+
+情景模拟
+
+假设现在进行一个网络下载任务，有一个网址列表，且单任务运行延迟比较高，需要等零点几至一点几秒。多线程的话，可能同样是零点几秒，多个网页数据已经同时返回。
+
+
+
+方案1
+
+初始方案是，在主进程中，将网址列表保留到数组A，建立线程共享数组B，
+
+每个线程对应数组B的一个元素，在线程中执行一个死循环，判断如果元素是undef，则待命；否则执行特定任务，完成后该元素重新定义为 undef
+
+在所有任务指派完成后，当数组B所有元素回归到 undef，结束所有线程
+
+=info
+    523066680 2017-09
+=cut
+
+use threads;
+use threads::shared;
+use Time::HiRes qw/sleep time/;
+use IO::Handle;
+STDOUT->autoflush(1);
+
+our $idx = 0;
+our @ths;
+our @target :shared;
+our @mission = qw/
+    baidu google souhu qiyi 163 bing vertex amazon 
+    lofter foobar zhihu nvidia cuda perl metacpan ruby
+    python
+/;
+
+#创建线程
+grep { push @ths, threads->create( \&func, $_ ) } ( 0 .. 3 );
+
+#任务指派
+while ( $#mission >= 0 )
+{
+    for my $idx ( 0 .. $#ths )
+    {
+        if ( not defined $target[$idx] )
+        {
+            $target[$idx] = shift @mission;
+        }
+    }
+}
+
+#等待线程任务完结
+my $wait = 1;
+while ( $wait )
+{
+    $wait = 0;
+    grep { $wait = 1 if ( defined $_ ) } @target;
+}
+
+#线程终结和分离
+grep { $_->kill('BREAK')->detach() } threads->list(threads::all);
+
+sub func
+{
+    my $idx = shift;
+    my $time_a;
+
+    $SIG{'BREAK'} = sub { threads->exit() };
+
+    while (1)
+    {
+        if ( defined $target[$idx] )
+        {
+            $time_a = time();
+
+            #假设时间消耗
+            sleep rand(2.0);
+
+            #完成后任务信息输出
+            printf "[%d] target: %-10s time used: %.2f\n", 
+                    threads->tid(), $target[$idx], time() - $time_a;
+
+            #清理任务记录
+            $target[$idx] = undef;
+        }
+
+        #待命
+        sleep 0.1;
+    }
+}
+方案2
+
+我拍一拍脑袋，好像绕了点，为什么不直接共享所有地址数据，线程直接从数组中获取？于是重写了：
+
+=info
+    523066680 2017-09
+=cut
+
+use threads;
+use threads::shared;
+use Time::HiRes qw/sleep time/;
+use IO::Handle;
+STDOUT->autoflush(1);
+
+our $idx = 0;
+our @ths;
+our @mission :shared; #共享到线程
+
+@mission = qw/
+    baidu google souhu qiyi 163 bing vertex amazon 
+    lofter foobar zhihu nvidia cuda perl metacpan ruby
+    python
+/;
+
+#创建线程
+grep { push @ths, threads->create( \&func, $_ ) } ( 0 .. 3 );
+
+#等待运行结束
+while ( threads->list(threads::running) ) { sleep 0.2 };
+
+#线程分离/结束
+grep { $_->detach() } threads->list(threads::all);
+
+sub func
+{
+    our @mission;
+    my $idx = shift;
+    my $time_a;
+    my $target;
+
+    $SIG{'BREAK'} = sub { threads->exit() };
+
+    while ( $#mission >= 0 )
+    {
+        $time_a = time();
+        $target = shift @mission;
+
+        #假设时间消耗
+        sleep rand(2.0);
+
+        #完成后任务信息输出
+        printf "[%d] target: %-10s time used: %.2f\n", 
+                threads->tid(), $target, time() - $time_a;
+    }
+}
+
+
+输出样本：
+
+[1] target: baidu time used: 0.75
+[4] target: qiyi time used: 0.91
+[2] target: google time used: 1.13
+[4] target: bing time used: 0.35
+[3] target: souhu time used: 1.47
+[3] target: lofter time used: 0.37
+[1] target: 163 time used: 1.67
+[4] target: amazon time used: 1.53
+[4] target: nvidia time used: 0.12
+[2] target: vertex time used: 1.91
+[3] target: foobar time used: 1.40
+[3] target: metacpan time used: 0.66
+[4] target: cuda time used: 1.20
+[2] target: perl time used: 1.25
+[1] target: zhihu time used: 1.99
+[3] target: ruby time used: 0.87
+[4] target: python time used: 1.58
+[Finished in 5.9s]
+如果不使用多线程，这些时间累计是 19.16 秒
+
+
+
+知乎什么时候能内置支持markdown？
+
+编辑于 2017-09-11
