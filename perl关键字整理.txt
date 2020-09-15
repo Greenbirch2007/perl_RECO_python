@@ -1,0 +1,189 @@
+
+eq,ne,lt,gt,le,ge
+chomp，只操作字符串(剔除字符串之外的变量)
+undef 零活空字符串
+defined用来判断某个变量是否为空
+$--list--array
+..  range operator
+qw quoted word 
+@
+pop,push 对数组尾部操作
+shift,unshift对数组头部处理
+splice(数组，开始元素索引，长度，替换的列表)
+
+bedrock数组
+foreach控制结构
+默认会自动打印$_
+reverse操作符
+@fred = reverse @fred;
+sort操作符
+each 操作符
+each只能用于提取哈希的k-v对
+@betty = (); 这是正确的清空数组的方法
+ perl会自动将参数列表化名为特殊的
+ 数组变量@_,该变量在子程序执行期间
+有效
+子程序可以访问这个数组，以判断参数的个数以及参数的值
+
+实际上，@_变量是子程序的私有变量
+
+变长参数列表
+改进的$max子程序
+用die处理致命错误
+
+die函数会输出你指定的信息到转为这个类信息准备的标准错误流中，并且让你的
+程序立刻终止并返回不为零的退出吗
+
+用warn送出警告信息
+warn函数，die函数
+关于词法(my)变量
+use strict 编译指令
+return 操作符
+想在子程序执行到一半时停止自行
+
+return 可以立即停止执行并从子程序内返回某个值
+
+state持久性私有变量
+
+用say来输出
+
+exists函数
+
+检查哈希中是否存在某个键
+exists能返回布尔值，分别表示键存在与否，和键对应的值无关
+
+delete 函数，以包含两个元素的列表的形式返回键值对
+
+chapter8 用正则表达式进行匹配
+用m//匹配
+模式匹配修饰符
+
+用/i进行大小写无关的匹配
+
+用/s匹配任意字符
+
+用/x加入空白符
+选择一种字符解释方式
+/a ASCII
+/u Unicode
+/l locale
+
+锚位
+
+m{\Ahttps:?://}if
+
+
+绑定操作符=~
+
+默认情况下模式匹配的操作对象是$_
+
+=~，拿右边的模式来匹配左边的字符串
+
+模式中的内插
+捕捉变量
+
+捕获变量的存续期
+
+?:
+
+命名捕获
+
+自动捕获变量
+
+通用量词
+
+通用量词
+
+(?:...)()
+
+chapter 9 用正则处理文本
+
+用s///进行替换
+用/g进行全局替换
+不同的定界符
+可用替换修饰符
+绑定操作符
+split操作符
+join函数
+列表上下文中的m//
+
+chapter10
+其他控制结构
+unless
+until
+elsif子句
+last
+next
+redo
+条件操作符?:
+AND && OR  ||
+
+
+安装模块
+
+安装到自己的目录
+
+File::Basename模块
+
+use File::Basename模块
+
+File:Spec
+Path::Class模块
+
+CGI.pm模块
+
+stat和lstat函数
+$dev,$ino
+
+$mode
+$nlink
+$uid,$gid
+$size
+$atime,$mtime,$ctime
+localtime函数
+
+
+目录句柄
+用index查找子字符串
+用substr操作子字符串
+用sprintf格式化字符串
+用sprintf格式化金额数组
+
+system函数
+
+避免使用shell
+exec函数
+
+
+发送及接收信号
+
+用eval捕捉错误
+
+用die抛出异常，然后用eval捕捉隐藏你
+
+Try::Tiny
+
+
+use Try:Tiny
+try{
+ ...;
+ }
+ catch {
+ ...;
+ }
+ finally{
+	...;
+	}
+	
+autodie
+
+用grep筛选列表
+
+grep操作在标量上下文中返回的是符合过滤条件的严肃个书
+
+用map把列表元素变形
+
+
+List::Until
+
+
